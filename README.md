@@ -36,7 +36,7 @@ Nothing is replaced or hidden: take the line out and the wkhtmltopdf you had bef
 
 ## Always the latest release
 
-The formula follows every release of marqius-wkhtmltopdf on its own. Each hour [a workflow](.github/workflows/formula.yml) checks marqius.com; a new release is checked against its published checksums, then installed, tested and audited on Linux (x86-64 and ARM64), and on macOS (Apple silicon) whenever GitHub has a Mac free, before the formula moves to it; a failure on any of them holds the release back. Every day it also installs and tests the current formula again on all three. To bring yours up to date:
+The formula follows every release of marqius-wkhtmltopdf on its own. Each hour [a workflow](.github/workflows/formula.yml) checks marqius.com; a new release's builds, the macOS one included, are checked against their published checksums, and the formula is installed, tested and audited on Linux (x86-64 and ARM64) before it moves to the release; a failure holds the release back. Every day it also installs and tests the current formula again. To bring yours up to date:
 
 ```bash
 brew upgrade marqius-wkhtmltopdf
