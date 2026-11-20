@@ -4,7 +4,8 @@
 #                  checked against its published checksum, then installed, tested and audited on
 #                  Linux (x86-64 and ARM64) and on macOS (Apple silicon); it is committed once Linux
 #                  passes and macOS has not failed (GitHub's Macs are often all taken: a macOS job
-#                  GitHub never starts does not hold a release back; a macOS test that fails does)
+#                  GitHub never starts neither holds a release back nor marks the run failed; a macOS
+#                  test that runs and fails does both)
 #   every day      the formula as it stands is installed, tested and audited on the same three
 #                  again, so a change on marqius.com, in Homebrew or at GitHub shows within a day
 #   by hand        Actions > Formula > Run workflow: follows a new release if there is one, and
@@ -89,6 +90,11 @@ jobs:
 
   test-macos:
     needs: follow
+    # no Mac from GitHub must not mark the run failed; "macos-result" below fails it when macOS ran and failed
+    continue-on-error: true
+    outputs:
+      started: ${{ steps.started.outputs.started }}
+      passed: ${{ steps.passed.outputs.passed }}
     if: >-
       needs.follow.outputs.changed == 'true' || github.event_name == 'push' || github.event_name == 'pull_request' ||
       github.event_name == 'workflow_dispatch' || github.event.schedule == '47 5 * * *'
@@ -98,6 +104,8 @@ jobs:
       HOMEBREW_NO_INSTALL_CLEANUP: 1
       HOMEBREW_NO_ANALYTICS: 1
     steps:
+      - id: started
+        run: echo "started=true" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # taps this repository as marqiushq/tap from the working copy, which it first resets to the commit
       - uses: Homebrew/actions/setup-homebrew@61b401267256bb9c047d6d1481b176d5772a0ba7 # main, 2026-11-20
@@ -120,14 +128,26 @@ jobs:
           brew audit --strict --online --formula marqiushq/tap/marqius-wkhtmltopdf
           test "$(marqius-wkhtmltopdf --version)" = "marqius-wkhtmltopdf $want"
           "$(brew --prefix)/opt/marqius-wkhtmltopdf/libexec/bin/wkhtmltopdf" -V | grep -q "marqius-wkhtmltopdf $want"
+      - id: passed
+        run: echo "passed=true" >> "$GITHUB_OUTPUT"
+
+  # the macOS test ran on a Mac and did not pass: the run fails, as a Linux failure would
+  macos-result:
+    needs: test-macos
+    if: always() && needs.test-macos.outputs.started == 'true' && needs.test-macos.outputs.passed != 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - run: |
+          echo "The macOS test ran and did not pass: see the test-macos job."
+          exit 1
+
 
   publish:
     needs: [follow, test, test-macos]
-    # Linux must pass; macOS must not fail (a macOS job GitHub never started, for want of a Mac, is "cancelled");
-    # a run cancelled by hand publishes nothing
+    # Linux must pass; macOS must pass whenever GitHub gave it a Mac; a run cancelled by hand publishes nothing
     if: >-
       always() && !cancelled() && needs.follow.outputs.changed == 'true' && github.ref == 'refs/heads/main' &&
-      needs.test.result == 'success' && (needs.test-macos.result == 'success' || needs.test-macos.result == 'cancelled')
+      needs.test.result == 'success' && (needs.test-macos.outputs.started != 'true' || needs.test-macos.outputs.passed == 'true')
     runs-on: ubuntu-24.04
     permissions:
       contents: write
