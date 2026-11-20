@@ -64,20 +64,27 @@ jobs:
       HOMEBREW_NO_ANALYTICS: 1
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # taps this repository as marqiushq/tap from the working copy, which it first resets to the commit
+      - uses: Homebrew/actions/setup-homebrew@61b401267256bb9c047d6d1481b176d5772a0ba7 # main, 2026-11-20
+      # so a new release's formula is put in place after it, not before
       - if: needs.follow.outputs.changed == 'true'
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: formula
           path: Formula
-      # taps this repository as marqiushq/tap, straight from the working copy above
-      - uses: Homebrew/actions/setup-homebrew@61b401267256bb9c047d6d1481b176d5772a0ba7 # main, 2026-11-20
       - name: Install, test and audit
+        env:
+          WANT: ${{ needs.follow.outputs.version }}
         run: |
+          formula="$(brew --repository marqiushq/tap)/Formula/marqius-wkhtmltopdf.rb"
+          want="${WANT:-$(sed -n 's/^  version "\(.*\)"$/\1/p' "$formula")}"
+          echo "Testing marqius-wkhtmltopdf $want"
+          grep -q "^  version \"$want\"$" "$formula"
           brew install --formula marqiushq/tap/marqius-wkhtmltopdf
           brew test marqiushq/tap/marqius-wkhtmltopdf
           brew audit --strict --online --formula marqiushq/tap/marqius-wkhtmltopdf
-          marqius-wkhtmltopdf --version
-          "$(brew --prefix)/opt/marqius-wkhtmltopdf/libexec/bin/wkhtmltopdf" -V
+          test "$(marqius-wkhtmltopdf --version)" = "marqius-wkhtmltopdf $want"
+          "$(brew --prefix)/opt/marqius-wkhtmltopdf/libexec/bin/wkhtmltopdf" -V | grep -q "marqius-wkhtmltopdf $want"
 
 
   test-macos:
@@ -92,26 +99,34 @@ jobs:
       HOMEBREW_NO_ANALYTICS: 1
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # taps this repository as marqiushq/tap from the working copy, which it first resets to the commit
+      - uses: Homebrew/actions/setup-homebrew@61b401267256bb9c047d6d1481b176d5772a0ba7 # main, 2026-11-20
+      # so a new release's formula is put in place after it, not before
       - if: needs.follow.outputs.changed == 'true'
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: formula
           path: Formula
-      # taps this repository as marqiushq/tap, straight from the working copy above
-      - uses: Homebrew/actions/setup-homebrew@61b401267256bb9c047d6d1481b176d5772a0ba7 # main, 2026-11-20
       - name: Install, test and audit
+        env:
+          WANT: ${{ needs.follow.outputs.version }}
         run: |
+          formula="$(brew --repository marqiushq/tap)/Formula/marqius-wkhtmltopdf.rb"
+          want="${WANT:-$(sed -n 's/^  version "\(.*\)"$/\1/p' "$formula")}"
+          echo "Testing marqius-wkhtmltopdf $want"
+          grep -q "^  version \"$want\"$" "$formula"
           brew install --formula marqiushq/tap/marqius-wkhtmltopdf
           brew test marqiushq/tap/marqius-wkhtmltopdf
           brew audit --strict --online --formula marqiushq/tap/marqius-wkhtmltopdf
-          marqius-wkhtmltopdf --version
-          "$(brew --prefix)/opt/marqius-wkhtmltopdf/libexec/bin/wkhtmltopdf" -V
+          test "$(marqius-wkhtmltopdf --version)" = "marqius-wkhtmltopdf $want"
+          "$(brew --prefix)/opt/marqius-wkhtmltopdf/libexec/bin/wkhtmltopdf" -V | grep -q "marqius-wkhtmltopdf $want"
 
   publish:
     needs: [follow, test, test-macos]
-    # Linux must pass; macOS must not fail (a macOS job GitHub never started, for want of a Mac, is "cancelled")
+    # Linux must pass; macOS must not fail (a macOS job GitHub never started, for want of a Mac, is "cancelled");
+    # a run cancelled by hand publishes nothing
     if: >-
-      always() && needs.follow.outputs.changed == 'true' && github.ref == 'refs/heads/main' &&
+      always() && !cancelled() && needs.follow.outputs.changed == 'true' && github.ref == 'refs/heads/main' &&
       needs.test.result == 'success' && (needs.test-macos.result == 'success' || needs.test-macos.result == 'cancelled')
     runs-on: ubuntu-24.04
     permissions:
