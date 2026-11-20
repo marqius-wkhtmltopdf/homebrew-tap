@@ -4,8 +4,10 @@
 #                  checked against its published checksum, then installed, tested and audited on
 #                  Linux (x86-64 and ARM64) and on macOS (Apple silicon); it is committed once Linux
 #                  passes and macOS has not failed (GitHub's Macs are often all taken: a macOS job
-#                  GitHub never starts neither holds a release back nor marks the run failed; a macOS
-#                  test that runs and fails does both)
+#                  GitHub never starts does not hold a release back; a macOS test that runs and fails
+#                  does). The macOS tests run on macOS 26, whose machines GitHub supplies far more
+#                  readily than macOS 15's; setting the repository variable MACOS_TESTS to "off"
+#                  turns them off, should GitHub run short of those too
 #   every day      the formula as it stands is installed, tested and audited on the same three
 #                  again, so a change on marqius.com, in Homebrew or at GitHub shows within a day
 #   by hand        Actions > Formula > Run workflow: follows a new release if there is one, and
@@ -90,15 +92,16 @@ jobs:
 
   test-macos:
     needs: follow
-    # no Mac from GitHub must not mark the run failed; "macos-result" below fails it when macOS ran and failed
+    # a Mac GitHub never supplies must not hold a release back; "macos-result" below fails the run when macOS
+    # ran and failed. Off when MACOS_TESTS is "off" (Settings > Secrets and variables > Actions > Variables)
     continue-on-error: true
     outputs:
       started: ${{ steps.started.outputs.started }}
       passed: ${{ steps.passed.outputs.passed }}
     if: >-
-      needs.follow.outputs.changed == 'true' || github.event_name == 'push' || github.event_name == 'pull_request' ||
-      github.event_name == 'workflow_dispatch' || github.event.schedule == '47 5 * * *'
-    runs-on: macos-15
+      vars.MACOS_TESTS != 'off' && (needs.follow.outputs.changed == 'true' || github.event_name == 'push' || github.event_name == 'pull_request' ||
+      github.event_name == 'workflow_dispatch' || github.event.schedule == '47 5 * * *')
+    runs-on: macos-26
     env:
       HOMEBREW_NO_AUTO_UPDATE: 1
       HOMEBREW_NO_INSTALL_CLEANUP: 1
