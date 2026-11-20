@@ -1,92 +1,55 @@
-# Marqius Homebrew tap: wkhtmltopdf replacement
+# marqius-wkhtmltopdf for Homebrew
 
-**Marqius by Simple AI LLC** is a maintained, wkhtmltopdf-compatible HTML-to-PDF command-line program for applications that generate invoices, reports, statements and other documents.
+Install **marqius-wkhtmltopdf**, the maintained drop-in replacement for wkhtmltopdf, with Homebrew on Apple silicon Macs and on Linux (x86-64 and ARM64).
 
-Keep your templates and executable-based wrapper library, point the application at Marqius, and compare the resulting PDFs before switching production.
-
-[Product and switching guide](https://marqius.com/wkhtmltopdf/) · [Download Marqius](https://marqius.com/wkhtmltopdf/download/) · [Trial and licence plans](https://marqius.com/wkhtmltopdf-buy/)
-
-> **Homebrew status:** This repository is being prepared for Homebrew distribution. No installable cask or formula has been published here yet. Use the official download and installer below.
-
-## Install Marqius today
-
-The [official installation guide](https://marqius.com/wkhtmltopdf/download/) provides the supported downloads and a platform-detecting installer. The installer verifies the binary's SHA-256 checksum and preserves an existing wkhtmltopdf installation unless you explicitly choose to take over.
-
-Download the installer, review it, then run it:
-
-```sh
-curl -fsSL https://marqius.com/marqius-wkhtmltopdf.sh -o marqius-wkhtmltopdf.sh
-bash marqius-wkhtmltopdf.sh
+```bash
+brew install marqiushq/tap/marqius-wkhtmltopdf
 ```
 
-### Current official downloads
+It reads wkhtmltopdf's command line as it is. Try it in an empty folder:
 
-| Operating system | Architecture |
-| --- | --- |
-| Linux | x86-64 / AMD64 |
-| Linux | ARM64 / AArch64 |
-| macOS | Apple silicon / ARM64 |
-
-These are the direct-download platforms. This repository does not yet provide Homebrew packages. Windows is not part of the current supported download set.
-
-## Convert HTML to PDF and compare the result
-
-Render a representative document:
-
-```sh
-marqius wkhtmltopdf --page-size A4 invoice.html invoice.pdf
+```bash
+echo '<h1>Invoice 42</h1><p>Total €1,234.50</p>' > invoice.html
+marqius-wkhtmltopdf --page-size A4 invoice.html invoice.pdf
 ```
 
-Compare it with a known-good PDF from your existing workflow:
+## Switch your application
 
-```sh
-marqius compare old.pdf invoice.pdf
+Keep your library, HTML templates and PDF calls, and point the library at marqius-wkhtmltopdf in either of two ways.
+
+**Name its path in the library's settings.** This prints the path to use:
+
+```bash
+echo "$(brew --prefix)/bin/marqius-wkhtmltopdf"
 ```
 
-Check fonts, images, headers, footers and page breaks on your own documents. Font availability can change text widths and pagination; install the fonts your templates use.
+`marqius-wkhtmltopdf help libraries` lists the libraries it knows, from python-pdfkit and Snappy to wicked_pdf and Rotativa, and `marqius-wkhtmltopdf help snappy` (or another name from that list) shows where each one takes the path.
 
-## Keep your existing application and wrapper
+**Or give it the names wkhtmltopdf and wkhtmltoimage** for everything started from your shell, by putting its own folder of those names first on your PATH. Add the first line to your shell profile to keep it:
 
-Marqius supports migration paths for libraries that launch the wkhtmltopdf executable. Usually the integration change is the executable path or command, followed by output checks.
+```bash
+export PATH="$(brew --prefix)/opt/marqius-wkhtmltopdf/libexec/bin:$PATH"
+wkhtmltopdf -V
+```
 
-| Application stack | Wrapper or integration | Guide |
-| --- | --- | --- |
-| Python, Django and Flask | pdfkit, django-wkhtmltopdf, imgkit | [Python migration](https://marqius.com/wkhtmltopdf/python/) |
-| PHP and Laravel | KnpLabs Snappy, laravel-snappy | [PHP and Laravel migration](https://marqius.com/wkhtmltopdf/laravel-php/) |
-| Ruby and Rails | wicked_pdf, PDFKit | [Ruby and Rails migration](https://marqius.com/wkhtmltopdf/rails-ruby/) |
-| .NET on Linux | Rotativa, Wkhtmltopdf.NetCore | [.NET migration](https://marqius.com/wkhtmltopdf/dotnet/) |
-| Node.js and Go | Wrappers that start wkhtmltopdf | [Node.js and Go migration](https://marqius.com/wkhtmltopdf/node-go/) |
-| Docker and CI | The Linux executable in your own image | [Docker integration](https://marqius.com/wkhtmltopdf/docker/) |
+Nothing is replaced or hidden: take the line out and the wkhtmltopdf you had before is back.
 
-Libraries that load **libwkhtmltox** directly, including DinkToPdf, cannot use this executable as a replacement for that shared library. PDF output is not guaranteed to be identical; validate your representative documents before changing production.
+## Always the latest release
 
-## Frequently asked questions
+The formula follows every release of marqius-wkhtmltopdf on its own. Each hour [a workflow](.github/workflows/formula.yml) checks marqius.com; a new release is checked against its published checksums, then installed, tested and audited on macOS (Apple silicon) and on Linux (x86-64 and ARM64) before the formula moves to it. To bring yours up to date:
 
-### Can I install Marqius with brew now?
+```bash
+brew upgrade marqius-wkhtmltopdf
+```
 
-Not from this tap yet. The official installer and direct downloads are available through the [download guide](https://marqius.com/wkhtmltopdf/download/). Homebrew commands will be documented here when a tested package is published.
+## Licence
 
-### Will it replace my existing wkhtmltopdf automatically?
+marqius-wkhtmltopdf is commercial software from Simple AI LLC, with a 30-day free trial counted from its first run; `marqius-wkhtmltopdf licence` shows the days left. After the trial, without a licence, each page carries one line saying the copy is unlicensed. [Plans and licences](https://marqius.com/wkhtmltopdf/) · [Licence terms](https://marqius.com/licence/marqius-wkhtmltopdf)
 
-The official installer preserves the existing program by default. Follow the switching guide and compare your PDFs before explicitly choosing takeover.
+## Before you switch
 
-### Can I keep PDFKit, Snappy or wicked_pdf?
+- [wkhtmltopdf parity suite](https://github.com/marqiushq/wkhtmltopdf-parity): the same HTML documents through wkhtmltopdf and marqius-wkhtmltopdf on every release, misses included. Run it on your own templates; nothing is uploaded.
+- [Integration examples](https://github.com/marqiushq/marqius-wkhtmltopdf-examples) for 14 wkhtmltopdf libraries.
+- [The switching manual](https://marqius.com/download/marqius-wkhtmltopdf/replace-wkhtmltopdf.pdf) (PDF).
 
-For executable-based integrations, keep the wrapper and configure it to use the compatible Marqius program. Use the stack-specific guides above to check paths and supported workflows.
-
-### Is Marqius open source?
-
-Marqius is proprietary software from Simple AI LLC. This repository is for Homebrew distribution and documentation; it is not the Marqius engine source. See the [trial and licence plans](https://marqius.com/wkhtmltopdf-buy/) for product licensing.
-
-## Documentation and support
-
-- [wkhtmltopdf switching guide](https://marqius.com/wkhtmltopdf/)
-- [Installation and download guide](https://marqius.com/wkhtmltopdf/download/)
-- [Switching manual (PDF)](https://marqius.com/download/replace-wkhtmltopdf.pdf)
-- [Security and untrusted HTML guidance](https://marqius.com/wkhtmltopdf/security/)
-- [Contact Marqius](https://marqius.com/contact/)
-- [Report a tap or documentation issue](https://github.com/marqius-wkhtmltopdf/homebrew-tap/issues)
-
-For documents that contain untrusted HTML, apply the file, network and process-isolation controls described in the security guide. Remove private document content before posting a public issue.
-
-Marqius is independent of the wkhtmltopdf project. Other product names identify migration paths and belong to their respective owners.
+Intel Macs have no build yet: write to hello@marqius.com. To remove marqius-wkhtmltopdf, run `brew uninstall marqius-wkhtmltopdf`.
