@@ -3,13 +3,17 @@
 #   every hour     when marqius.com's latest release is newer than the formula, each new build is
 #                  checked against its published checksum, then installed, tested and audited on
 #                  macOS (Apple silicon) and Linux (x86-64 and ARM64); only then is it committed
-#   by hand        Actions > Formula > Run workflow: the same, now
+#   every day      the formula as it stands is installed, tested and audited on the same three
+#                  again, so a change on marqius.com, in Homebrew or at GitHub shows within a day
+#   by hand        Actions > Formula > Run workflow: follows a new release if there is one, and
+#                  tests on all three either way
 #   on a change    to main, or in a pull request: the formula as it stands, on the same three
 name: Formula
 
 on:
   schedule:
-    - cron: "17 * * * *"
+    - cron: "17 * * * *" # every hour: follow a new release
+    - cron: "47 5 * * *" # every day: test the formula as it stands
   workflow_dispatch:
   push:
     branches: [main]
@@ -43,7 +47,9 @@ jobs:
 
   test:
     needs: follow
-    if: needs.follow.outputs.changed == 'true' || github.event_name == 'push' || github.event_name == 'pull_request'
+    if: >-
+      needs.follow.outputs.changed == 'true' || github.event_name == 'push' || github.event_name == 'pull_request' ||
+      github.event_name == 'workflow_dispatch' || github.event.schedule == '47 5 * * *'
     strategy:
       fail-fast: false
       matrix:
